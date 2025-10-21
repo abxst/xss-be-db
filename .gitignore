@@ -47,6 +47,3 @@ tmp/
 *.pem
 *.key
 secrets.json
-
-#documentation
-docs/

@@ -2,21 +2,35 @@
 
 /**
  * Parse CORS origins from comma-separated string
- * Filters out wildcard '*' for security
  */
 function parseAllowedOrigins(corsOrigin: string): string[] {
   return corsOrigin
     .split(',')
     .map(o => o.trim())
-    .filter(o => o.length > 0 && o !== '*'); // Remove wildcards
+    .filter(o => o.length > 0);
 }
 
 /**
  * Get the appropriate origin to return in CORS header
- * ALWAYS returns a specific origin (never '*') to support credentials
+ * Supports wildcard '*' by reflecting request origin (allows all origins)
  */
 function getAllowedOrigin(requestOrigin: string | null, allowedOrigins: string[]): string {
-  // No allowed origins configured → return first request origin or default
+  // Check if wildcard is present
+  const hasWildcard = allowedOrigins.includes('*');
+  
+  // ⚠️ WILDCARD MODE: Accept ALL origins (UNSAFE for production!)
+  if (hasWildcard) {
+    // Return request origin to enable credentials with any origin
+    // Cannot return '*' directly because credentials won't work
+    if (requestOrigin) {
+      return requestOrigin;
+    }
+    // No request origin → return first non-wildcard origin or default
+    const specificOrigins = allowedOrigins.filter(o => o !== '*');
+    return specificOrigins[0] || 'http://localhost:3000';
+  }
+  
+  // SPECIFIC ORIGINS MODE: Only allow listed origins
   if (allowedOrigins.length === 0) {
     console.warn('⚠️ CORS_ORIGIN not configured properly. Using request origin or localhost fallback.');
     return requestOrigin || 'http://localhost:3000';

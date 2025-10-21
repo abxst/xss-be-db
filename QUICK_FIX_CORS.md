@@ -29,20 +29,26 @@ wrangler deploy
 
 ### Bước 2: Set Environment Variable
 
-**Option A: CLI (Khuyên dùng)**
+**Option A: Accept ALL origins (⚠️ KHÔNG AN TOÀN!)**
+```bash
+wrangler secret put CORS_ORIGIN
+# Khi hỏi: *
+```
+
+**Option B: Specific origin (✅ Khuyên dùng)**
 ```bash
 wrangler secret put CORS_ORIGIN
 # Khi hỏi: https://xss-fe.pages.dev
 ```
 
-**Option B: Dashboard**
-1. https://dash.cloudflare.com
-2. Workers & Pages → `xss-be-db`
-3. Settings → Variables
-4. Edit `CORS_ORIGIN`:
-   ```
-   https://xss-fe.pages.dev
-   ```
+**Option C: Multiple origins (✅ An toàn)**
+```bash
+wrangler secret put CORS_ORIGIN
+# Khi hỏi: http://localhost:3000,https://xss-fe.pages.dev
+```
+
+**⚠️ CẢNH BÁO:** Dùng `*` cho phép BẤT KỲ website nào gọi API!
+Xem `SECURITY_WARNING.md` để biết rủi ro.
 
 ---
 

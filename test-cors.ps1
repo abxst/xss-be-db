@@ -21,14 +21,24 @@ $response.Headers.'Access-Control-Allow-Credentials'
 $response.Headers.'Access-Control-Allow-Methods'
 Write-Host ""
 
-# Check if wildcard
-if ($response.Headers.'Access-Control-Allow-Origin' -eq '*') {
-    Write-Host "❌ ERROR: Still returning wildcard '*'" -ForegroundColor Red
-    Write-Host "   → Need to deploy new code!" -ForegroundColor Yellow
-} elseif ($response.Headers.'Access-Control-Allow-Origin' -eq 'https://xss-fe.pages.dev') {
-    Write-Host "✅ SUCCESS: Returning specific origin" -ForegroundColor Green
+# Check result
+$allowOrigin = $response.Headers.'Access-Control-Allow-Origin'
+
+if ($allowOrigin -eq '*') {
+    Write-Host "⚠️  WILDCARD MODE: Returning '*' (credentials won't work!)" -ForegroundColor Yellow
+    Write-Host "   → This means old code is still running" -ForegroundColor Red
+    Write-Host "   → Run: wrangler deploy" -ForegroundColor Cyan
+} elseif ($allowOrigin -eq 'https://xss-fe.pages.dev') {
+    Write-Host "✅ SUCCESS: Returning request origin" -ForegroundColor Green
+    Write-Host "   → CORS is working correctly!" -ForegroundColor Green
+    if ($response.Headers.'Access-Control-Allow-Credentials' -eq 'true') {
+        Write-Host "   ✅ Credentials enabled" -ForegroundColor Green
+    }
 } else {
-    Write-Host "⚠️  WARNING: Unexpected origin: $($response.Headers.'Access-Control-Allow-Origin')" -ForegroundColor Yellow
+    Write-Host "✅ Returning origin: $allowOrigin" -ForegroundColor Green
+    if ($response.Headers.'Access-Control-Allow-Credentials' -eq 'true') {
+        Write-Host "   ✅ Credentials enabled" -ForegroundColor Green
+    }
 }
 
 Write-Host ""
