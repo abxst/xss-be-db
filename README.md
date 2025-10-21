@@ -153,7 +153,9 @@ npm run deploy
 - `GET /api/posts/:post_uuid/comments` - Lấy comments của post
 - `GET /api/comments/my` - Lấy comments của mình (🔒 cần auth)
 
-**Chi tiết đầy đủ xem tại:** [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)
+**🚀 Hướng dẫn gọi API:** [API_USAGE_GUIDE.md](./docs/API_USAGE_GUIDE.md) - Examples với JavaScript, Python, cURL, Axios
+
+**📖 Chi tiết API Reference:** [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)
 
 ## 🧪 Test API
 

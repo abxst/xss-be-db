@@ -4,6 +4,10 @@
 declare namespace Cloudflare {
 	interface Env {
 		DB: D1Database;
+		JWT_SECRET: string;
+		CORS_ORIGIN: string;
+		API_VERSION: string;
+		NODE_ENV: string;
 	}
 }
 interface Env extends Cloudflare.Env {}

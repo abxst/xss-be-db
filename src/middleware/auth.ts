@@ -5,15 +5,36 @@ export interface AuthRequest extends Request {
   user?: JWTPayload;
 }
 
-// Extract and verify JWT token from Authorization header
-export async function authenticateUser(request: Request, secret: string): Promise<JWTPayload | null> {
-  const authHeader = request.headers.get('Authorization');
+// Extract token from cookie
+function getTokenFromCookie(request: Request): string | null {
+  const cookieHeader = request.headers.get('Cookie');
+  if (!cookieHeader) return null;
+
+  const cookies = cookieHeader.split(';').map(c => c.trim());
+  const authCookie = cookies.find(c => c.startsWith('auth_token='));
   
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authCookie) return null;
+  
+  return authCookie.substring('auth_token='.length);
+}
+
+// Extract and verify JWT token from Cookie or Authorization header
+export async function authenticateUser(request: Request, secret: string): Promise<JWTPayload | null> {
+  // Try to get token from cookie first
+  let token = getTokenFromCookie(request);
+  
+  // Fallback to Authorization header (for backward compatibility)
+  if (!token) {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
+  
+  if (!token) {
     return null;
   }
 
-  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
   return await verifyJWT(token, secret);
 }
 

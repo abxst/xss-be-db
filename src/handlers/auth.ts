@@ -1,7 +1,7 @@
-// Authentication handlers (register, login)
+// Authentication handlers (register, login, logout)
 import { hashPassword, verifyPassword, generateUUID } from '../utils/crypto';
 import { signJWT } from '../utils/jwt';
-import { successResponse, errorResponse } from '../utils/response';
+import { successResponse, errorResponse, createTokenCookie, clearTokenCookie } from '../utils/response';
 import { getEnvConfig } from '../config/env';
 import { validateRegister, validateLogin, formatValidationErrors } from '../utils/validation';
 import type { RegisterRequest, LoginRequest, AuthResponse } from '../types/api';
@@ -48,17 +48,23 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
       exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
     }, config.JWT_SECRET);
 
+    // Set token in HTTP-only cookie
+    const cookieString = createTokenCookie(token);
+
     const response: AuthResponse = {
       success: true,
-      token,
       user: {
         uuid,
         username,
         name
-      }
+      },
+      message: 'Registration successful'
     };
 
-    return successResponse(response, 201, responseOptions);
+    return successResponse(response, 201, {
+      ...responseOptions,
+      setCookie: cookieString
+    });
   } catch (error) {
     console.error('Register error:', error);
     const config = getEnvConfig(env);
@@ -109,17 +115,23 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
       exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
     }, config.JWT_SECRET);
 
+    // Set token in HTTP-only cookie
+    const cookieString = createTokenCookie(token);
+
     const response: AuthResponse = {
       success: true,
-      token,
       user: {
         uuid: user.uuid,
         username: user.username,
         name: user.name
-      }
+      },
+      message: 'Login successful'
     };
 
-    return successResponse(response, 200, responseOptions);
+    return successResponse(response, 200, {
+      ...responseOptions,
+      setCookie: cookieString
+    });
   } catch (error) {
     console.error('Login error:', error);
     const config = getEnvConfig(env);
@@ -127,3 +139,24 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
   }
 }
 
+// Logout user
+export async function handleLogout(request: Request, env: Env): Promise<Response> {
+  try {
+    const config = getEnvConfig(env);
+    const responseOptions = { corsOrigin: config.CORS_ORIGIN };
+
+    // Clear the cookie
+    const cookieString = clearTokenCookie();
+
+    return successResponse({
+      message: 'Logout successful'
+    }, 200, {
+      ...responseOptions,
+      setCookie: cookieString
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    const config = getEnvConfig(env);
+    return errorResponse('Logout failed', 500, error instanceof Error ? error.message : 'Unknown error', { corsOrigin: config.CORS_ORIGIN });
+  }
+}

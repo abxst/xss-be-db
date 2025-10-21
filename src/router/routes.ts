@@ -1,6 +1,6 @@
 // API Routes với Switch Case
 import { authenticateUser } from '../middleware/auth';
-import { handleRegister, handleLogin } from '../handlers/auth';
+import { handleRegister, handleLogin, handleLogout } from '../handlers/auth';
 import { 
   handleCreatePost, 
   handleGetPosts, 
@@ -55,11 +55,12 @@ export async function handleRoute(context: RouteContext): Promise<Response> {
         message: 'XSS Lab API is running',
         version: config.API_VERSION,
         environment: config.NODE_ENV,
-        endpoints: {
-          auth: {
-            register: 'POST /api/auth/register',
-            login: 'POST /api/auth/login'
-          },
+          endpoints: {
+            auth: {
+              register: 'POST /api/auth/register',
+              login: 'POST /api/auth/login',
+              logout: 'POST /api/auth/logout'
+            },
           posts: {
             create: 'POST /api/posts',
             getAll: 'GET /api/posts',
@@ -96,6 +97,9 @@ export async function handleRoute(context: RouteContext): Promise<Response> {
 
     case method === 'POST' && path === '/api/auth/login':
       return handleLogin(request, env);
+
+    case method === 'POST' && path === '/api/auth/logout':
+      return handleLogout(request, env);
 
     // ===== POST ROUTES =====
     case method === 'POST' && path === '/api/posts':
