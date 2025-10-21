@@ -7,12 +7,18 @@ export function addCorsHeaders(response: Response, corsOrigin: string): Response
   const headers = new Headers(response.headers);
   
   // CORS headers
-  headers.set('Access-Control-Allow-Origin', corsOrigin);
+  // Note: Nếu corsOrigin là '*', không thể dùng credentials
+  // Frontend phải gửi request mà không có credentials: 'include'
+  // hoặc backend phải set CORS_ORIGIN cụ thể (http://localhost:3000)
+  const origin = corsOrigin === '*' ? corsOrigin : corsOrigin;
+  
+  headers.set('Access-Control-Allow-Origin', origin);
   headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
   
-  // Allow credentials (cookies) if not wildcard
-  if (corsOrigin !== '*') {
+  // MUST set credentials to true when using cookies
+  // Điều này yêu cầu CORS_ORIGIN KHÔNG được là '*'
+  if (origin !== '*') {
     headers.set('Access-Control-Allow-Credentials', 'true');
   }
   
