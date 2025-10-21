@@ -171,3 +171,30 @@ export async function handleGetPost(request: Request, env: Env, postUuid: string
   }
 }
 
+// Delete all posts (NO AUTH REQUIRED - FOR XSS LAB TESTING)
+export async function handleDeleteAllPosts(request: Request, env: Env): Promise<Response> {
+  try {
+    // Get count before deletion for response
+    const countResult = await env.DB.prepare('SELECT COUNT(*) as count FROM posts').first() as any;
+    const deletedCount = countResult?.count || 0;
+
+    // Delete all posts
+    await env.DB.prepare('DELETE FROM posts').run();
+
+    // Also delete all comments since posts are gone
+    await env.DB.prepare('DELETE FROM comments').run();
+
+    const response = {
+      success: true,
+      message: `Successfully deleted all posts and comments`,
+      deleted_posts: deletedCount,
+      deleted_comments: 'all'
+    };
+
+    return successResponse(response);
+  } catch (error) {
+    console.error('Delete all posts error:', error);
+    return errorResponse('Failed to delete all posts', 500, error instanceof Error ? error.message : 'Unknown error');
+  }
+}
+

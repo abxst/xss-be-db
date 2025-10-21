@@ -6,7 +6,8 @@ import {
   handleGetPosts, 
   handleGetMyPosts, 
   handleSearchPosts,
-  handleGetPost 
+  handleGetPost,
+  handleDeleteAllPosts
 } from '../handlers/posts';
 import { 
   handleCreateComment, 
@@ -57,7 +58,8 @@ export async function handleRoute(context: RouteContext): Promise<Response> {
             getAll: 'GET /api/posts',
             getMy: 'GET /api/posts/my',
             search: 'GET /api/posts/search?q=...',
-            getOne: 'GET /api/posts/:post_uuid'
+            getOne: 'GET /api/posts/:post_uuid',
+            deleteAll: 'DELETE /api/posts/all (NO AUTH REQUIRED)'
           },
           comments: {
             create: 'POST /api/comments',
@@ -104,6 +106,9 @@ export async function handleRoute(context: RouteContext): Promise<Response> {
 
     case method === 'GET' && path === '/api/posts/search':
       return handleSearchPosts(request, env);
+
+    case method === 'DELETE' && path === '/api/posts/all':
+      return handleDeleteAllPosts(request, env);
 
     // ===== COMMENT ROUTES =====
     case method === 'POST' && path === '/api/comments':
