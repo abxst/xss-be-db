@@ -1,0 +1,16 @@
+{
+  "compatibility_date": "2025-10-08",
+  "main": "src/index.ts",
+  "name": "xss-be-db",
+  "upload_source_maps": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "4da88092-1a1d-4a1f-83e9-c853735f2099",
+      "database_name": "xsslab"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
