@@ -3,9 +3,19 @@
 
 export interface ResponseOptions {
   setCookie?: string;
+  corsOrigin?: string;
 }
 
-// Create cookie string for JWT token
+/**
+ * Create cookie string for JWT token
+ * 
+ * Cross-Origin Cookie Support:
+ * - SameSite=None: Cho phép cookie được gửi cross-origin
+ * - Secure: Bắt buộc khi dùng SameSite=None (chỉ HTTPS)
+ * 
+ * Note: Development (localhost) có thể dùng SameSite=Lax
+ * Production (HTTPS) phải dùng SameSite=None + Secure
+ */
 export function createTokenCookie(token: string, maxAge: number = 7 * 24 * 60 * 60): string {
   // maxAge in seconds (default 7 days)
   const cookieParts = [
@@ -13,16 +23,19 @@ export function createTokenCookie(token: string, maxAge: number = 7 * 24 * 60 * 
     `Max-Age=${maxAge}`,
     'Path=/',
     'HttpOnly', // Prevent JavaScript access
-    'SameSite=Lax', // CSRF protection
-    // 'Secure', // Uncomment for HTTPS only
+    'SameSite=None', // Allow cross-origin (required for CORS with credentials)
+    'Secure', // Required with SameSite=None (HTTPS only)
   ];
   
   return cookieParts.join('; ');
 }
 
-// Create cookie to clear token
+/**
+ * Create cookie to clear token
+ * Must match the same attributes as createTokenCookie
+ */
 export function clearTokenCookie(): string {
-  return 'auth_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax';
+  return 'auth_token=; Max-Age=0; Path=/; HttpOnly; SameSite=None; Secure';
 }
 
 export function jsonResponse(data: any, status: number = 200, options?: ResponseOptions): Response {
