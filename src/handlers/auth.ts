@@ -10,15 +10,13 @@ import type { RegisterRequest, LoginRequest, AuthResponse } from '../types/api';
 export async function handleRegister(request: Request, env: Env): Promise<Response> {
   try {
     const config = getEnvConfig(env);
-    const responseOptions = { corsOrigin: config.CORS_ORIGIN };
-    
     const body = await request.json() as RegisterRequest;
     const { username, password, name } = body;
 
     // Validate input
     const validation = validateRegister({ username, password, name });
     if (!validation.valid) {
-      return errorResponse(formatValidationErrors(validation), 400, undefined, responseOptions);
+      return errorResponse(formatValidationErrors(validation), 400);
     }
 
     // Check if username already exists
@@ -27,7 +25,7 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
     ).bind(username).first();
 
     if (existingUser) {
-      return errorResponse('Username already exists', 409, undefined, responseOptions);
+      return errorResponse('Username already exists', 409);
     }
 
     // Hash password
@@ -62,13 +60,11 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
     };
 
     return successResponse(response, 201, {
-      ...responseOptions,
       setCookie: cookieString
     });
   } catch (error) {
     console.error('Register error:', error);
-    const config = getEnvConfig(env);
-    return errorResponse('Registration failed', 500, error instanceof Error ? error.message : 'Unknown error', { corsOrigin: config.CORS_ORIGIN });
+    return errorResponse('Registration failed', 500, error instanceof Error ? error.message : 'Unknown error');
   }
 }
 
@@ -76,15 +72,13 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
   try {
     const config = getEnvConfig(env);
-    const responseOptions = { corsOrigin: config.CORS_ORIGIN };
-    
     const body = await request.json() as LoginRequest;
     const { username, password } = body;
 
     // Validate input
     const validation = validateLogin({ username, password });
     if (!validation.valid) {
-      return errorResponse(formatValidationErrors(validation), 400, undefined, responseOptions);
+      return errorResponse(formatValidationErrors(validation), 400);
     }
 
     // Find user
@@ -93,13 +87,13 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
     ).bind(username).first() as any;
 
     if (!user) {
-      return errorResponse('Invalid username or password', 401, undefined, responseOptions);
+      return errorResponse('Invalid username or password', 401);
     }
 
     // Verify password
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
-      return errorResponse('Invalid username or password', 401, undefined, responseOptions);
+      return errorResponse('Invalid username or password', 401);
     }
 
     // Update last login
@@ -129,34 +123,27 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
     };
 
     return successResponse(response, 200, {
-      ...responseOptions,
       setCookie: cookieString
     });
   } catch (error) {
     console.error('Login error:', error);
-    const config = getEnvConfig(env);
-    return errorResponse('Login failed', 500, error instanceof Error ? error.message : 'Unknown error', { corsOrigin: config.CORS_ORIGIN });
+    return errorResponse('Login failed', 500, error instanceof Error ? error.message : 'Unknown error');
   }
 }
 
 // Logout user
 export async function handleLogout(request: Request, env: Env): Promise<Response> {
   try {
-    const config = getEnvConfig(env);
-    const responseOptions = { corsOrigin: config.CORS_ORIGIN };
-
     // Clear the cookie
     const cookieString = clearTokenCookie();
 
     return successResponse({
       message: 'Logout successful'
     }, 200, {
-      ...responseOptions,
       setCookie: cookieString
     });
   } catch (error) {
     console.error('Logout error:', error);
-    const config = getEnvConfig(env);
-    return errorResponse('Logout failed', 500, error instanceof Error ? error.message : 'Unknown error', { corsOrigin: config.CORS_ORIGIN });
+    return errorResponse('Logout failed', 500, error instanceof Error ? error.message : 'Unknown error');
   }
 }

@@ -1,23 +1,8 @@
 // Helper functions for API responses
+// CORS headers được xử lý tập trung tại middleware/cors.ts
 
 export interface ResponseOptions {
-  corsOrigin?: string;
   setCookie?: string;
-}
-
-export function getCorsHeaders(corsOrigin: string = '*', withCredentials: boolean = true): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie',
-  };
-  
-  // Allow credentials (cookies) if not wildcard
-  if (withCredentials && corsOrigin !== '*') {
-    headers['Access-Control-Allow-Credentials'] = 'true';
-  }
-  
-  return headers;
 }
 
 // Create cookie string for JWT token
@@ -43,7 +28,6 @@ export function clearTokenCookie(): string {
 export function jsonResponse(data: any, status: number = 200, options?: ResponseOptions): Response {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...getCorsHeaders(options?.corsOrigin),
   };
   
   // Add Set-Cookie header if provided
@@ -75,11 +59,4 @@ export function notFound(message: string = 'Not found', options?: ResponseOption
 
 export function serverError(message: string = 'Internal server error', error?: string, options?: ResponseOptions): Response {
   return errorResponse(message, 500, error, options);
-}
-
-export function corsPreflightResponse(corsOrigin: string = '*'): Response {
-  return new Response(null, {
-    status: 204,
-    headers: getCorsHeaders(corsOrigin, corsOrigin !== '*'),
-  });
 }

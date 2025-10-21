@@ -1,13 +1,10 @@
 // Health check handlers
-import { successResponse, errorResponse } from '../utils/response';
+import { successResponse, errorResponse, jsonResponse } from '../utils/response';
 import { getEnvConfig } from '../config/env';
 
 // Check database connection
 export async function handleDatabaseHealth(request: Request, env: Env): Promise<Response> {
   try {
-    const config = getEnvConfig(env);
-    const responseOptions = { corsOrigin: config.CORS_ORIGIN };
-    
     const startTime = Date.now();
     
     // Test database connection với query đơn giản
@@ -23,23 +20,20 @@ export async function handleDatabaseHealth(request: Request, env: Env): Promise<
           responseTime: `${responseTime}ms`,
           message: 'Database connection is working properly'
         }
-      }, 200, responseOptions);
+      });
     } else {
       return errorResponse(
         'Database connection test failed',
         503,
-        'Unexpected query result',
-        responseOptions
+        'Unexpected query result'
       );
     }
   } catch (error) {
     console.error('Database health check error:', error);
-    const config = getEnvConfig(env);
     return errorResponse(
       'Database connection failed',
       503,
-      error instanceof Error ? error.message : 'Unknown error',
-      { corsOrigin: config.CORS_ORIGIN }
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }
@@ -47,9 +41,6 @@ export async function handleDatabaseHealth(request: Request, env: Env): Promise<
 // Check database với thông tin chi tiết hơn
 export async function handleDetailedDatabaseHealth(request: Request, env: Env): Promise<Response> {
   try {
-    const config = getEnvConfig(env);
-    const responseOptions = { corsOrigin: config.CORS_ORIGIN };
-    
     const checks: any = {
       timestamp: new Date().toISOString(),
       database: {
@@ -70,8 +61,7 @@ export async function handleDetailedDatabaseHealth(request: Request, env: Env): 
       return errorResponse(
         'Database connection failed',
         503,
-        checks.database.error,
-        responseOptions
+        checks.database.error
       );
     }
     
@@ -105,16 +95,14 @@ export async function handleDetailedDatabaseHealth(request: Request, env: Env): 
       checks.database.tablesError = error instanceof Error ? error.message : 'Could not check tables';
     }
     
-    return successResponse(checks, 200, responseOptions);
+    return successResponse(checks);
     
   } catch (error) {
     console.error('Detailed database health check error:', error);
-    const config = getEnvConfig(env);
     return errorResponse(
       'Health check failed',
       503,
-      error instanceof Error ? error.message : 'Unknown error',
-      { corsOrigin: config.CORS_ORIGIN }
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }
@@ -123,7 +111,6 @@ export async function handleDetailedDatabaseHealth(request: Request, env: Env): 
 export async function handleFullHealth(request: Request, env: Env): Promise<Response> {
   try {
     const config = getEnvConfig(env);
-    const responseOptions = { corsOrigin: config.CORS_ORIGIN };
     
     const health: any = {
       status: 'healthy',
@@ -156,30 +143,15 @@ export async function handleFullHealth(request: Request, env: Env): Promise<Resp
     
     const statusCode = health.status === 'healthy' ? 200 : 503;
     
-    return jsonResponse(health, statusCode, responseOptions);
+    return jsonResponse(health, statusCode);
     
   } catch (error) {
     console.error('Full health check error:', error);
-    const config = getEnvConfig(env);
     return errorResponse(
       'Health check failed',
       503,
-      error instanceof Error ? error.message : 'Unknown error',
-      { corsOrigin: config.CORS_ORIGIN }
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
-}
-
-// Helper to import jsonResponse
-function jsonResponse(data: any, status: number, options?: any): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': options?.corsOrigin || '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
 }
 

@@ -18,7 +18,7 @@ import {
   handleDetailedDatabaseHealth,
   handleFullHealth
 } from '../handlers/health';
-import { errorResponse, jsonResponse, corsPreflightResponse } from '../utils/response';
+import { errorResponse, jsonResponse } from '../utils/response';
 import { getEnvConfig } from '../config/env';
 
 export interface RouteContext {
@@ -33,18 +33,9 @@ export interface RouteContext {
 export async function handleRoute(context: RouteContext): Promise<Response> {
   const { request, env, url, path, method } = context;
   const config = getEnvConfig(env);
-  const responseOptions = { corsOrigin: config.CORS_ORIGIN };
-
-  // Handle CORS preflight
-  if (method === 'OPTIONS') {
-    return corsPreflightResponse(config.CORS_ORIGIN);
-  }
 
   // Get authenticated user (if any)
   const user = await authenticateUser(request, config.JWT_SECRET);
-
-  // Parse route pattern
-  const routeKey = `${method} ${path}`;
 
   // Switch case cho routing
   switch (true) {
@@ -79,7 +70,7 @@ export async function handleRoute(context: RouteContext): Promise<Response> {
             databaseDetailed: 'GET /api/health/db/detailed'
           }
         }
-      }, 200, responseOptions);
+      });
 
     // ===== HEALTH CHECK ROUTES =====
     case method === 'GET' && path === '/api/health':
@@ -130,8 +121,6 @@ export async function handleRoute(context: RouteContext): Promise<Response> {
 // Handle dynamic routes with path parameters
 async function handleDynamicRoutes(context: RouteContext, user: any): Promise<Response> {
   const { request, env, path, method } = context;
-  const config = getEnvConfig(env);
-  const responseOptions = { corsOrigin: config.CORS_ORIGIN };
 
   // Match: GET /api/posts/:post_uuid
   const postMatch = path.match(/^\/api\/posts\/([a-zA-Z0-9-]+)$/);
@@ -148,6 +137,6 @@ async function handleDynamicRoutes(context: RouteContext, user: any): Promise<Re
   }
 
   // No route matched - 404
-  return errorResponse('Endpoint not found', 404, undefined, responseOptions);
+  return errorResponse('Endpoint not found', 404);
 }
 
