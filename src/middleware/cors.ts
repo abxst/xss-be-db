@@ -2,49 +2,39 @@
 
 /**
  * Parse CORS origins from comma-separated string
+ * Filters out wildcard '*' for security
  */
 function parseAllowedOrigins(corsOrigin: string): string[] {
-  return corsOrigin.split(',').map(o => o.trim()).filter(o => o.length > 0);
+  return corsOrigin
+    .split(',')
+    .map(o => o.trim())
+    .filter(o => o.length > 0 && o !== '*'); // Remove wildcards
 }
 
 /**
  * Get the appropriate origin to return in CORS header
- * When credentials are used, we CANNOT use '*', must return specific origin
+ * ALWAYS returns a specific origin (never '*') to support credentials
  */
 function getAllowedOrigin(requestOrigin: string | null, allowedOrigins: string[]): string {
-  const hasWildcard = allowedOrigins.includes('*');
-  const specificOrigins = allowedOrigins.filter(o => o !== '*');
-  
-  // Case 1: Wildcard ALONE (no specific origins) → return wildcard (no credentials)
-  if (hasWildcard && specificOrigins.length === 0) {
-    return '*';
+  // No allowed origins configured → return first request origin or default
+  if (allowedOrigins.length === 0) {
+    console.warn('⚠️ CORS_ORIGIN not configured properly. Using request origin or localhost fallback.');
+    return requestOrigin || 'http://localhost:3000';
   }
   
-  // Case 2: Wildcard + specific origins → DEV MODE
-  // Allow ANY origin with credentials (useful for local development)
-  // Example: CORS_ORIGIN="*, http://localhost:3000"
-  if (hasWildcard && specificOrigins.length > 0) {
-    // If request has an origin, return it (allow any origin)
-    if (requestOrigin) {
-      return requestOrigin;
-    }
-    // No request origin → return first specific origin to enable credentials
-    // This prevents returning '*' when credentials are needed
-    return specificOrigins[0];
-  }
-  
-  // Case 3: Only specific origins → PRODUCTION MODE
-  // Check if request origin is in allowed list
-  if (requestOrigin && specificOrigins.includes(requestOrigin)) {
+  // If request origin matches one of the allowed origins → return it
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
     return requestOrigin;
   }
   
-  // Fallback: return first specific origin (or '*' if no specific origins)
-  return specificOrigins[0] || '*';
+  // Request origin doesn't match or no origin header
+  // → Return first allowed origin (ensures credentials work)
+  return allowedOrigins[0];
 }
 
 /**
  * Wrap response với CORS headers
+ * ALWAYS sets credentials to true (no wildcard support)
  */
 export function addCorsHeaders(response: Response, corsOrigin: string, requestOrigin: string | null = null): Response {
   const headers = new Headers(response.headers);
@@ -56,11 +46,8 @@ export function addCorsHeaders(response: Response, corsOrigin: string, requestOr
   headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
   
-  // MUST set credentials to true when using cookies
-  // Cannot use with wildcard '*'
-  if (allowedOrigin !== '*') {
-    headers.set('Access-Control-Allow-Credentials', 'true');
-  }
+  // ALWAYS set credentials to true (we never use wildcard now)
+  headers.set('Access-Control-Allow-Credentials', 'true');
   
   return new Response(response.body, {
     status: response.status,
@@ -71,6 +58,7 @@ export function addCorsHeaders(response: Response, corsOrigin: string, requestOr
 
 /**
  * Handle CORS preflight requests (OPTIONS)
+ * ALWAYS sets credentials to true (no wildcard support)
  */
 export function handleCorsPreflightRequest(corsOrigin: string, requestOrigin: string | null = null): Response {
   const allowedOrigins = parseAllowedOrigins(corsOrigin);
@@ -80,12 +68,9 @@ export function handleCorsPreflightRequest(corsOrigin: string, requestOrigin: st
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie',
+    'Access-Control-Allow-Credentials': 'true', // ALWAYS true
     'Access-Control-Max-Age': '86400', // 24 hours
   };
-  
-  if (allowedOrigin !== '*') {
-    headers['Access-Control-Allow-Credentials'] = 'true';
-  }
   
   return new Response(null, {
     status: 204,
