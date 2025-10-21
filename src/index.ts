@@ -1,14 +1,35 @@
-import { renderHtml } from "./renderHtml";
+// Main entry point for XSS Lab API
+import { handleRoute } from './router/routes';
+import { serverError } from './utils/response';
+import { getEnvConfig } from './config/env';
 
 export default {
-  async fetch(request, env) {
-    const stmt = env.DB.prepare("SELECT * FROM comments LIMIT 3");
-    const { results } = await stmt.all();
+  async fetch(request: Request, env: Env): Promise<Response> {
+    try {
+      const url = new URL(request.url);
+      const path = url.pathname;
+      const method = request.method;
 
-    return new Response(renderHtml(JSON.stringify(results, null, 2)), {
-      headers: {
-        "content-type": "text/html",
-      },
-    });
+      // Create route context
+      const context = {
+        request,
+        env,
+        url,
+        path,
+        method,
+      };
+
+      // Handle route
+      return await handleRoute(context);
+
+    } catch (error) {
+      console.error('Server error:', error);
+      const config = getEnvConfig(env);
+      return serverError(
+        'Internal server error',
+        error instanceof Error ? error.message : 'Unknown error',
+        { corsOrigin: config.CORS_ORIGIN }
+      );
+    }
   },
 } satisfies ExportedHandler<Env>;
