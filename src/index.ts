@@ -8,6 +8,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const config = getEnvConfig(env);
     const corsOrigin = config.CORS_ORIGIN;
+    const requestOrigin = request.headers.get('Origin');
 
     try {
       const url = new URL(request.url);
@@ -16,7 +17,7 @@ export default {
 
       // Handle CORS preflight globally
       if (method === 'OPTIONS') {
-        return handleCorsPreflightRequest(corsOrigin);
+        return handleCorsPreflightRequest(corsOrigin, requestOrigin);
       }
 
       // Create route context
@@ -32,7 +33,7 @@ export default {
       const response = await handleRoute(context);
 
       // Add CORS headers to all responses
-      return addCorsHeaders(response, corsOrigin);
+      return addCorsHeaders(response, corsOrigin, requestOrigin);
 
     } catch (error) {
       console.error('Server error:', error);
@@ -42,7 +43,7 @@ export default {
       );
       
       // Add CORS headers to error responses
-      return addCorsHeaders(response, corsOrigin);
+      return addCorsHeaders(response, corsOrigin, requestOrigin);
     }
   },
 } satisfies ExportedHandler<Env>;
