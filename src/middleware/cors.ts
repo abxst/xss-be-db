@@ -15,7 +15,7 @@ function getAllowedOrigin(requestOrigin: string | null, allowedOrigins: string[]
   const hasWildcard = allowedOrigins.includes('*');
   const specificOrigins = allowedOrigins.filter(o => o !== '*');
   
-  // Case 1: Wildcard ALONE → return wildcard (no credentials)
+  // Case 1: Wildcard ALONE (no specific origins) → return wildcard (no credentials)
   if (hasWildcard && specificOrigins.length === 0) {
     return '*';
   }
@@ -23,8 +23,14 @@ function getAllowedOrigin(requestOrigin: string | null, allowedOrigins: string[]
   // Case 2: Wildcard + specific origins → DEV MODE
   // Allow ANY origin with credentials (useful for local development)
   // Example: CORS_ORIGIN="*, http://localhost:3000"
-  if (hasWildcard && specificOrigins.length > 0 && requestOrigin) {
-    return requestOrigin;
+  if (hasWildcard && specificOrigins.length > 0) {
+    // If request has an origin, return it (allow any origin)
+    if (requestOrigin) {
+      return requestOrigin;
+    }
+    // No request origin → return first specific origin to enable credentials
+    // This prevents returning '*' when credentials are needed
+    return specificOrigins[0];
   }
   
   // Case 3: Only specific origins → PRODUCTION MODE
@@ -33,7 +39,7 @@ function getAllowedOrigin(requestOrigin: string | null, allowedOrigins: string[]
     return requestOrigin;
   }
   
-  // Fallback: return first specific origin or wildcard
+  // Fallback: return first specific origin (or '*' if no specific origins)
   return specificOrigins[0] || '*';
 }
 
